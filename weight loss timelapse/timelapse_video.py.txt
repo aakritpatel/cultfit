@@ -1,0 +1,75 @@
+import cv2
+import os
+from natsort import natsorted
+
+def create_video_from_images(
+    image_folder: str, 
+    output_file: str, 
+    frame_duration: float = 0.5, 
+    fps: int = 30
+):
+    # Check if image folder exists
+    if not os.path.exists(image_folder):
+        print(f"Error: Folder does not exist: {image_folder}")
+        return
+    
+    # Get list of image files and sort them numerically
+    image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    image_files = natsorted(image_files, key=lambda x: int(os.path.splitext(x)[0]))
+    
+    if not image_files:
+        print("No valid images found in the specified folder.")
+        return
+
+    # Read the first image to determine frame size
+    first_image_path = os.path.join(image_folder, image_files[0])
+    first_image = cv2.imread(first_image_path)
+    if first_image is None:
+        print(f"Error reading the first image: {first_image_path}")
+        return
+    
+    height, width, _ = first_image.shape
+
+    # Initialize video writer
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for MP4
+    output_video = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
+
+    # Ensure consistent frame size and write frames
+    frames_per_image = int(frame_duration * fps)
+    for image_file in image_files:
+        image_path = os.path.join(image_folder, image_file)
+        image = cv2.imread(image_path)
+
+        if image is None:
+            print(f"Skipping invalid image: {image_path}")
+            continue
+
+        # Resize image if its dimensions do not match the first image
+        if image.shape[:2] != (height, width):
+            image = cv2.resize(image, (width, height))
+
+        for _ in range(frames_per_image):
+            output_video.write(image)
+
+    # Release the video writer
+    output_video.release()
+    print(f"Video successfully saved to {output_file}")
+
+# Usage example
+image_folder_path = r"C:\python_stuff\timelapse"  # Replace with your images folder path
+output_video_path = r"C:\python_stuff\video\video.mp4"  # Ensure the file ends with .mp4
+frame_time = 0.125 # Each image visible for 0.5 seconds
+frames_per_second = 30  # Video FPS
+
+create_video_from_images(image_folder_path, output_video_path, frame_time, frames_per_second)
+
+
+
+
+
+
+
+
+
+
+
